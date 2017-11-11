@@ -1,3 +1,9 @@
+/*	Created By: Daniel Benusovich
+	Created On: 8 November 2017
+	Last Edited By: Daniel Benusovich
+	Last Edited On: 8 November 2017
+*/
+
 #include <H2RoverXbee.h>
 #include <IMU.h>
 #include <MotorControl.h>

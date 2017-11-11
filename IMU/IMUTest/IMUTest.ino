@@ -1,3 +1,10 @@
+
+/*	Created By: Daniel Benusovich
+	Created On: 4 November 2017
+	Last Edited By: Daniel Benusovich
+	Last Edited On: 4 November 2017
+*/
+
 #include <IMU.h>
 #include <MotorControl.h>
 #include <PinDeclarations.h>
