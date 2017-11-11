@@ -19,7 +19,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  uint8_t payload[] = {'0' , '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+//First value holds the length of the payload DO NOT INCLUDE THE  // LENGTH OF THE PAYLOAD. Notice ten characters = > 10
+  uint8_t payload[] = {10, '0' , '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   xbee.sendPacket(payload);
   delay(1000);
 }

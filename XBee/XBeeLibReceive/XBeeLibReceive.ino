@@ -22,8 +22,9 @@ void loop() {
   // put your main code here, to run repeatedly:
   //Make the maximum packet size available as the array
   //Not all of the array may be used in every message
-  //This issue will be fixed shortly
-  uint8_t payload[H2RoverXbee::MAXIMUM_PACKET_SIZE];
+  //The plus one size accounts for the length of the 
+  //payload that is returned. It can be a max of     	//MAXIMUM_PACKET_SIZE 
+  uint8_t payload[H2RoverXbee::MAXIMUM_PACKET_SIZE + 1];
   
   //Populate array
   /* The status is important to check. A proper payload must be 	acknowledged and read
@@ -33,11 +34,13 @@ void loop() {
   //Check if the packet status is good then print the results
   //Or process them as ones could requires.
   if (status == H2RoverXbee::RECIEVED_PACKET_ACK){
-    for(int i = 0; i < H2RoverXbee::MAXIMUM_PACKET_SIZE; i++){
+
+	//We read the first payload value as it contains the 	//length of the payload
+    for(int i = 0; i < payload[0]; i++){
       Serial.print(" Index: ");
-      Serial.print(i, DEC);
+      Serial.print(i - 1, DEC);
       Serial.print(" Value: ");
-      Serial.print(payload[i]);
+      Serial.print(payload[i + 1]);
       Serial.println();
     }
   } else if (status == H2RoverXbee::RECEIVED_RX_PACKET) {
