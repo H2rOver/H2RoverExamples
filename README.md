@@ -1,19 +1,25 @@
 H2Rover Library Installation
+
 Created By: Daniel Benusovich
 Created On: 4 November 2017
 Last Edited By: Daniel Benusovich
 Edited On: 11 November 2017
 
 Purpose of Example Library
-	The purpose of these examples are to provide a simple implementation of the H2rOver library. Rather than relying on only comments, it is often prudent to have an example to follow while coding complex systems. This example library will provide various examples for the implementation of the various sub-systems and allow for faster development times. 
+
+	The purpose of these examples are to provide a simple implementation of the H2rOver library. Rather than relying on only 
+	comments, it is often prudent to have an example to follow while coding complex systems. This example library will provide 
+	various examples for the implementation of the various sub-systems and allow for faster development times. 
   
 Requirements
-  1. Arduino Sketchbook is installed
-      Install here: https://www.arduino.cc/en/Guide/HomePage 
-  2. Git is installed on the computer
-      Install here: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git 
-      Verify installation by running the command “git” into the command line. The system should not print out that it is an unknown 
-      command.
+
+  	1. Arduino Sketchbook is installed
+      	Install here: https://www.arduino.cc/en/Guide/HomePage 
+	
+  	2. Git is installed on the computer
+      	Install here: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git 
+      	Verify installation by running the command “git” into the command line. The system should not print out that it is an unknown 
+      	command.
   3. Ensure the following libraries are installed:
     1. Adafruit Unified Sensor 
     2. Adafruit BNO055
@@ -40,6 +46,7 @@ Verification of Repository Import
 Update the Library
   The library will be periodically updated requiring one to run a command to update the library on local machines. Navigate to the 
   folder where the library is contained and run the following command to update the repository:
-    1. git pull
+  
+  	git pull
 
 
