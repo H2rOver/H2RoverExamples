@@ -16,6 +16,8 @@ H2RoverXbee xbee(0);
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+	//This should match on all xbees
+  xbee.setMaximumPacketSize(10);
 }
 
 void loop() {
@@ -24,7 +26,7 @@ void loop() {
   //Not all of the array may be used in every message
   //The plus one size accounts for the length of the 
   //payload that is returned. It can be a max of     	//MAXIMUM_PACKET_SIZE 
-  uint8_t payload[H2RoverXbee::MAXIMUM_PACKET_SIZE + 1];
+  uint8_t payload[xbee.getMaximumPacketSize() + 1];
   
   //Populate array
   /* The status is important to check. A proper payload must be 	acknowledged and read
@@ -38,9 +40,11 @@ void loop() {
 	//We read the first payload value as it contains the 	//length of the payload
     for(int i = 0; i < payload[0]; i++){
       Serial.print(" Index: ");
-      Serial.print(i - 1, DEC);
+      Serial.print(i, DEC);
       Serial.print(" Value: ");
-      Serial.print(payload[i + 1]);
+	// You could not cast this and use jus the number
+	//The cast is just for show
+      Serial.print((char) payload[i + 1]);
       Serial.println();
     }
   } else if (status == H2RoverXbee::RECEIVED_RX_PACKET) {
