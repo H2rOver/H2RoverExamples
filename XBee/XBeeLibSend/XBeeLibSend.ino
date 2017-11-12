@@ -9,7 +9,7 @@
 #include <MotorControl.h>
 #include <PinDeclarations.h>
 
-H2RoverXbee xbee(0);
+H2RoverXbee xbee(1);
 
 void setup() {
   // put your setup code here, to run once:
@@ -18,8 +18,10 @@ void setup() {
 }
 
 void loop() {
+xbee.setMaximumPacketSize(10);
   // put your main code here, to run repeatedly:
-  uint8_t payload[] = {'0' , '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+//First value holds the length of the payload DO NOT INCLUDE THE  // LENGTH OF THE PAYLOAD. Notice ten characters <= 10
+  uint8_t payload[] = {6, 'A' , 'B', 'C', '1', '2', '3'};
   xbee.sendPacket(payload);
   delay(1000);
 }
