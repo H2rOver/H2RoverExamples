@@ -1,9 +1,9 @@
 # H2Rover Example Library Installation
 
-Created By: Daniel Benusovich
-Created On: 4 November 2017
-Last Edited By: Daniel Benusovich
-Edited On: 11 November 2017
+Created By: Daniel Benusovich  
+Created On: 4 November 2017  
+Last Edited By: Daniel Benusovich  
+Edited On: 11 November 2017  
 
 ## Purpose of Example Library
 
