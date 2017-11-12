@@ -18,11 +18,11 @@ The purpose of these examples are to provide a simple implementation of the H2rO
 	   - Install here: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git 
 	   - Verify installation by running the command “git” into the command line.
   
-  3. Ensure the following libraries are installed:
-    1. Adafruit Unified Sensor 
-    2. Adafruit BNO055
-    3. Xbee
-    4. H2Rover
+ 	 3. The following libraries are installed:
+	    1. Adafruit Unified Sensor 
+	    2. Adafruit BNO055
+	    3. Xbee
+	    4. H2Rover
 
 ## Cloning the Repository
 
