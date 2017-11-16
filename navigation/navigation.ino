@@ -40,34 +40,34 @@ void forward_heading() {
     //int timeStart;
     //int timeNow;
     int16_t imu_readings2[3];
+	int w = 0;
     
     Imu_obj.getXYZ(imu_readings2);
     
     //when off by at least 2 degrees, correct, and then overcorrect by 2 degrees
+	
+	//Each of the adjustment methods have a print in there to stop the I2C from reading
+	//This allows the bumper to add an interrupt to the queue, which could not happen
+	//otherwise due to saturation. (This is a theory by Daniel B.)
     if(imu_readings2[0] + 2 < imu_readings1[0])
     {
-      //timeStart = millis();
+	  Red.motorForwardRight(150);
       do{
-        Red.motorForwardRight(150);
         Imu_obj.getXYZ(imu_readings2);
-        //timeNow = millis();
-        //Serial.print((int)bumperFlag);
+        Serial.print((int)bumperFlag);
       }while((imu_readings2[0] - 2 < imu_readings1[0]) && !bumperFlag);
     }
     else if(imu_readings2[0] - 2 < imu_readings1[0])
     {
-      //timeStart = millis();
+	  Red.motorForwardLeft(150);
       do{
-        Red.motorForwardLeft(150);
         Imu_obj.getXYZ(imu_readings2);
-        //timeNow = millis();
-        //Serial.print((int)bumperFlag);
+        Serial.print((int)bumperFlag);
       }while((imu_readings2[0] + 2 > imu_readings1[0]) && !bumperFlag);  //&& (timeNow - timeStart < 5000) 
     }
     else
     {
       Red.motorForward(255);
-      //Serial.print((int)bumperFlag);
     }
 
 }
@@ -78,7 +78,14 @@ void turn_around()
   int timeNow;
   int16_t imu_readings2[3];
   
+  Red.motorOff();
+  timeStart = millis();
+  do{
+    timeNow = millis();
+  }while(timeNow - timeStart < 1000);
+  
   Imu_obj.getXYZ(imu_readings2);
+  
   Red.motorBackward(255);
   timeStart = millis();
   do{
@@ -86,22 +93,16 @@ void turn_around()
   }while(timeNow - timeStart < 1000);
 
   imu_readings1[0] = (imu_readings1[0] + 180)%360;
-  //turn left 180 degrees
+
   do{
-    //Serial.println("in loop");
     Red.motorLeft(150);
     Imu_obj.getXYZ(imu_readings2);
-    //imu_readings2[0] = imu_readings2[0] + 180)%360;
-    
-    //Serial.print("X1 = ");
-    //Serial.print(imu_readings1[0]);
-    //Serial.print(" ~~ X2 = ");
-    //Serial.println(imu_readings2[0]);
   } while(imu_readings2[0] != imu_readings1[0]);
 }
 
 void stopRed() {
-  Red.motorOff();
+  noInterrupts();
   bumperFlag = true;
+  interrupts();
 }
 
