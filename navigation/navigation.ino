@@ -37,8 +37,8 @@ void loop() {
 
 void forward_heading() {
 
-    int timeStart;
-    int timeNow;
+    //int timeStart;
+    //int timeNow;
     int16_t imu_readings2[3];
     
     Imu_obj.getXYZ(imu_readings2);
@@ -46,53 +46,58 @@ void forward_heading() {
     //when off by at least 2 degrees, correct, and then overcorrect by 2 degrees
     if(imu_readings2[0] + 2 < imu_readings1[0])
     {
-      timeStart = millis();
+      //timeStart = millis();
       do{
         Red.motorForwardRight(150);
         Imu_obj.getXYZ(imu_readings2);
-        timeNow = millis();
-      }while((imu_readings2[0] - 2 < imu_readings1[0]) && (timeNow - timeStart < 5000));
+        //timeNow = millis();
+        //Serial.print((int)bumperFlag);
+      }while((imu_readings2[0] - 2 < imu_readings1[0]) && !bumperFlag);
     }
     else if(imu_readings2[0] - 2 < imu_readings1[0])
     {
-      timeStart = millis();
+      //timeStart = millis();
       do{
         Red.motorForwardLeft(150);
         Imu_obj.getXYZ(imu_readings2);
-        timeNow = millis();
-      }while((imu_readings2[0] + 2 > imu_readings1[0]) && (timeNow - timeStart < 5000));
+        //timeNow = millis();
+        //Serial.print((int)bumperFlag);
+      }while((imu_readings2[0] + 2 > imu_readings1[0]) && !bumperFlag);  //&& (timeNow - timeStart < 5000) 
     }
     else
     {
       Red.motorForward(255);
+      //Serial.print((int)bumperFlag);
     }
 
 }
 
 void turn_around()
 {
+  int timeStart;
+  int timeNow;
   int16_t imu_readings2[3];
   
   Imu_obj.getXYZ(imu_readings2);
   Red.motorBackward(255);
-  delay(1000);
+  timeStart = millis();
+  do{
+    timeNow = millis();
+  }while(timeNow - timeStart < 1000);
 
-  if(imu_readings1[0] < 180) {
-    imu_readings1[0] = imu_readings1[0] + 360;
-  }
+  imu_readings1[0] = (imu_readings1[0] + 180)%360;
   //turn left 180 degrees
   do{
     //Serial.println("in loop");
-    Red.motorLeft(255);
+    Red.motorLeft(150);
     Imu_obj.getXYZ(imu_readings2);
-    if(imu_readings2[0] < 180) {
-      imu_readings2[0] = imu_readings2[0] + 360;
-    }
-    Serial.print("X1 = ");
-    Serial.print(imu_readings1[0]);
-    Serial.print(" ~~ X2 = ");
-    Serial.println(imu_readings2[0]);
-  } while(imu_readings2[0] + 180 > imu_readings1[0]);
+    //imu_readings2[0] = imu_readings2[0] + 180)%360;
+    
+    //Serial.print("X1 = ");
+    //Serial.print(imu_readings1[0]);
+    //Serial.print(" ~~ X2 = ");
+    //Serial.println(imu_readings2[0]);
+  } while(imu_readings2[0] != imu_readings1[0]);
 }
 
 void stopRed() {
