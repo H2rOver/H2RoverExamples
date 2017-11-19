@@ -6,7 +6,7 @@
 MotorControl Red;
 IMU Imu_obj;
 
-boolean bumperFlag;
+volatile boolean bumperFlag;
 int16_t imu_readings1[3];
 
 void setup() {
@@ -54,7 +54,7 @@ void forward_heading() {
 	  Red.motorForwardRight(150);
       do{
         Imu_obj.getXYZ(imu_readings2);
-        Serial.print((int)bumperFlag);
+        //Serial.print((int)bumperFlag);
       }while((imu_readings2[0] - 2 < imu_readings1[0]) && !bumperFlag);
     }
     else if(imu_readings2[0] - 2 < imu_readings1[0])
@@ -62,7 +62,7 @@ void forward_heading() {
 	  Red.motorForwardLeft(150);
       do{
         Imu_obj.getXYZ(imu_readings2);
-        Serial.print((int)bumperFlag);
+        //Serial.print((int)bumperFlag);
       }while((imu_readings2[0] + 2 > imu_readings1[0]) && !bumperFlag);  //&& (timeNow - timeStart < 5000) 
     }
     else
@@ -101,8 +101,6 @@ void turn_around()
 }
 
 void stopRed() {
-  noInterrupts();
   bumperFlag = true;
-  interrupts();
 }
 
