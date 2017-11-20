@@ -4,6 +4,7 @@
 #include <PinDeclarations.h>
 
 #define TWO_FIVE_m 8964 //2.5m = 8964 encoder ticks
+#define TEN_cm 359 //10cm = 359 ticks
 #define DISTANCE_TRAVELED ticksNow - ticksStart
 
 MotorControl Red;
@@ -63,8 +64,6 @@ void loop() {
 
 void forward_heading() {
 
-    //int timeStart;
-    //int timeNow;
     int16_t imu_readings2[3];
     
     Imu_obj.getXYZ(imu_readings2);
@@ -96,16 +95,21 @@ void turn_around()
   int timeStart;
   int timeNow;
   int16_t imu_readings2[3];
+  int ticksStart, ticksNow;
   
   //wait for motors to fully stop
   Red.motorOff();
   timeStart = millis();
   do{timeNow = millis();}while(timeNow - timeStart < 800);
 
-  //reverse and stop
+  //reverse 10cm and stop
   Red.motorBackward(255);
-  timeStart = millis();
-  do{timeNow = millis();}while(timeNow - timeStart < 1000);
+  ticksStart = encoderTicks;
+  do {
+    ticksNow = encoderTicks;
+  } while(DISTANCE_TRAVELED < TEN_cm); //backup 10cm
+  //timeStart = millis();
+  //do{timeNow = millis();}while(timeNow - timeStart < 1000);
   Red.motorOff();
   timeStart = millis();
   do{timeNow = millis();}while(timeNow - timeStart < 800);
