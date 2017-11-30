@@ -23,7 +23,8 @@ enum states {
   stop2,  //stop backing up
   left1,  //turn left 90 after bumper backup
   stop3,  //stop turning left, turn on ultrasound
-  forward2,  //drive forward while listening to ultrasound
+  forward2a,  //drive forward while listening to ultrasound
+  forward2b,
   stop4,
   right1, //temporary state for debgging
   stop5,
@@ -48,11 +49,12 @@ static states currentState, nextState, previousState;
 uint16_t initialUltDist;
 uint32_t forwardTicks;
 uint32_t ticksTraveledSide;
+uint32_t backwardTicks;
 
 void setup() {
   // bumper setup
   bumperFlag = false;
-  pinMode(2, INPUT_PULLUP);
+  pinMode(FEELER, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FEELER), stopRed, FALLING);
 
   //encoder setup
@@ -108,6 +110,7 @@ void loop() {
 		forwardTicks = encoderTicks - ticksStart;
 		time = millis(); //start stopwatch
 		Red.motorOff();
+		  Serial.print("encoder ticks1: "); Serial.println(encoderTicks);
 	  }
       if(TIME_WAITED >= DELAY_1s) nextState = backup1;
       else nextState = stop1;
@@ -115,9 +118,17 @@ void loop() {
       
     //backup after bumper is hit for 1s (
     case backup1: 
-      if(previousState != backup1) time = millis(); //start stopwatch
+      if(previousState != backup1) {
+		  time = millis(); //start stopwatch
+		  ticksStart = encoderTicks;
+		  Serial.print("encoder ticks2: "); Serial.println(encoderTicks);
+	  }
       Red.motorBackward(255);
-      if(TIME_WAITED >= DELAY_1s) nextState = stop2;
+      if(TIME_WAITED >= DELAY_1s) {
+		  backwardTicks = encoderTicks - ticksStart;
+		  Serial.println(backwardTicks);
+		  nextState = stop2;
+	  }
       else nextState = backup1;
       break;
       
@@ -142,28 +153,47 @@ void loop() {
     case stop3: 
       if(previousState != stop3) time = millis(); //start stopwatch
       Red.motorOff();
-      if(TIME_WAITED >= DELAY_1s) nextState = forward2;
+      if(TIME_WAITED >= DELAY_1s) {
+		  nextState = forward2a;
+	  }
       else nextState = stop3;
       break;
       
     //drive forward while listening to ultrasound
-    case forward2:
-      if(previousState != forward2) {
+    case forward2a:
+      if(previousState != forward2a) {
         ticksStart = encoderTicks;  //start counting encoder ticks
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-		initialUltDist = ultra.getDistance();
+		initialUltDist = ultra.getDistance(100);
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance();
+	  newUltDist = ultra.getDistance(10);
 	  Serial.println("Inital then new");
 	  Serial.println(initialUltDist);
 	  Serial.println(newUltDist);
       if (initialUltDist + 5 < newUltDist){
 		ticksTraveledSide = encoderTicks - ticksStart;
+		nextState = forward2b;
+	  } else {
+		nextState = forward2a;
+		forward_heading();
+	  }
+		break;
+		
+	//after ultrasound obstacle passed, drive additional distance
+	case forward2b:
+      if(previousState != forward2b) {
+        ticksStart = encoderTicks;  //start counting encoder ticks
+        Imu_obj.getXYZ(imu_readings1); //establish imu starting point
+      }
+	  Serial.print("sideTicks: "); Serial.println(encoderTicks - ticksStart);
+	  Serial.print("backwardTicks: "); Serial.println(backwardTicks);
+      if (encoderTicks - ticksStart >= backwardTicks){
+		ticksTraveledSide += encoderTicks - ticksStart;
 		nextState = stop4;
 	  } else {
-		nextState = forward2;
+		nextState = forward2b;
 		forward_heading();
 	  }
 		break;
@@ -205,12 +235,11 @@ void loop() {
       if(previousState != forward3) {
         ticksStart = encoderTicks;  //start counting encoder ticks
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-		initialUltDist = ultra.getDistance();
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance();
-      if (initialUltDist > newUltDist + 5){
+	  newUltDist = ultra.getDistance(10);
+      if (initialUltDist > newUltDist - 5){
 		  nextState = forward4;
 	  } else {
 		  nextState = forward3;
@@ -222,11 +251,11 @@ void loop() {
     case forward4:
       if(previousState != forward4) {
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-		initialUltDist = ultra.getDistance();
+		initialUltDist = ultra.getDistance(100);
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance();
+	  newUltDist = ultra.getDistance(10);
       if (initialUltDist + 5 < newUltDist){
 		  forwardTicks += encoderTicks - ticksStart;
 		  nextState = stop6;
