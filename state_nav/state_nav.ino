@@ -169,6 +169,7 @@ void loop() {
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
 	  newUltDist = ultra.getDistance(10);
+	  Serial.println("Forward 3");
 	  Serial.println("Inital then new");
 	  Serial.println(initialUltDist);
 	  Serial.println(newUltDist);
@@ -189,7 +190,8 @@ void loop() {
       }
 	  Serial.print("sideTicks: "); Serial.println(encoderTicks - ticksStart);
 	  Serial.print("backwardTicks: "); Serial.println(backwardTicks);
-      if (encoderTicks - ticksStart >= backwardTicks){
+	  //Mod by 200 to reduce travel distance
+      if (encoderTicks - ticksStart >= backwardTicks % 200){
 		ticksTraveledSide += encoderTicks - ticksStart;
 		nextState = stop4;
 	  } else {
@@ -229,7 +231,7 @@ void loop() {
 		else nextState = stop5;
 		break;
 		
-	//Drive forward while listening to ultrasoudn to change values drastically twice
+	//Drive forward while listening to ultrasound to change values drastically twice
 	//This means we encounter the obstacle once, then leave its area of effect
 	case forward3:
       if(previousState != forward3) {
@@ -239,7 +241,11 @@ void loop() {
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
 	  newUltDist = ultra.getDistance(10);
-      if (initialUltDist > newUltDist - 5){
+	  Serial.println("Forward 3");
+	  Serial.println("Inital then new");
+	  Serial.println(initialUltDist);
+	  Serial.println(newUltDist);
+      if (initialUltDist > newUltDist + 20){
 		  nextState = forward4;
 	  } else {
 		  nextState = forward3;
@@ -256,6 +262,10 @@ void loop() {
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
 	  newUltDist = ultra.getDistance(10);
+	  Serial.println("Forward 4");
+	  Serial.println("Inital then new");
+	  Serial.println(initialUltDist);
+	  Serial.println(newUltDist);
       if (initialUltDist + 5 < newUltDist){
 		  forwardTicks += encoderTicks - ticksStart;
 		  nextState = stop6;
