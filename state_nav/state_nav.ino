@@ -10,6 +10,8 @@
 #define DISTANCE_TRAVELED encoderTicks - ticksStart
 
 //time constants
+#define DELAY_HALFs 500
+#define DELAY_THIRDSs 750
 #define DELAY_1s 1000
 #define DELAY_3s 3000
 #define TIME_WAITED millis() - time
@@ -29,6 +31,7 @@ enum states {
   right1, //temporary state for debgging
   stop5,
   forward3,
+  stop7,
   forward4,
   stop6
 };
@@ -42,6 +45,7 @@ Ultrasound ultra;
 static int16_t imu_readings1[3];
 volatile boolean bumperFlag;
 static boolean overCorrectFlag;
+//Be sure to redefine time when using millis
 static unsigned long time;
 volatile unsigned long encoderTicks;
 static unsigned long ticksStart;
@@ -124,7 +128,7 @@ void loop() {
 		  Serial.print("encoder ticks2: "); Serial.println(encoderTicks);
 	  }
       Red.motorBackward(255);
-      if(TIME_WAITED >= DELAY_1s) {
+      if(TIME_WAITED >= DELAY_HALFs) {
 		  backwardTicks = encoderTicks - ticksStart;
 		  Serial.println(backwardTicks);
 		  nextState = stop2;
@@ -145,6 +149,7 @@ void loop() {
       if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
       Red.motorLeft(150);
       Imu_obj.getXYZ(imu_readings2);
+	  Serial.println(imu_readings2[0]);
       if(imu_readings2[0] == imu_readings1[0]) nextState = stop3;
       else nextState = left1;
       break;
@@ -168,7 +173,7 @@ void loop() {
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance(10);
+	  newUltDist = ultra.getDistance(1);
 	  Serial.println("Forward 3");
 	  Serial.println("Inital then new");
 	  Serial.println(initialUltDist);
@@ -187,14 +192,19 @@ void loop() {
       if(previousState != forward2b) {
         ticksStart = encoderTicks;  //start counting encoder ticks
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
+		time = millis();
       }
 	  Serial.print("sideTicks: "); Serial.println(encoderTicks - ticksStart);
 	  Serial.print("backwardTicks: "); Serial.println(backwardTicks);
-	  //Mod by 200 to reduce travel distance
-      if (encoderTicks - ticksStart >= backwardTicks % 200){
-		ticksTraveledSide += encoderTicks - ticksStart;
+	  //changing to time
+      // if (encoderTicks - ticksStart >= backwardTicks % 50){
+		// ticksTraveledSide += encoderTicks - ticksStart;
+		// nextState = stop4;
+	  // } else {
+	  if (TIME_WAITED >= DELAY_HALFs){
 		nextState = stop4;
-	  } else {
+	  }
+	  else {
 		nextState = forward2b;
 		forward_heading();
 	  }
@@ -237,22 +247,33 @@ void loop() {
       if(previousState != forward3) {
         ticksStart = encoderTicks;  //start counting encoder ticks
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
+		initialUltDist = ultra.getDistance(100);
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance(10);
+	  newUltDist = ultra.getDistance(1);
 	  Serial.println("Forward 3");
 	  Serial.println("Inital then new");
 	  Serial.println(initialUltDist);
 	  Serial.println(newUltDist);
       if (initialUltDist > newUltDist + 20){
-		  nextState = forward4;
+		  nextState = stop7;
 	  } else {
 		  nextState = forward3;
 		  forward_heading();
 	  }
 		break;
 		
+	case stop7:
+		if(previousState != stop7){
+			time = millis(); //start stopwatch
+			Red.motorOff();
+		}
+		if(TIME_WAITED >= DELAY_1s) nextState = forward4;
+		else nextState = stop7;
+		break;
+
+	
 	//drive forward while listening to ultrasound
     case forward4:
       if(previousState != forward4) {
@@ -261,7 +282,7 @@ void loop() {
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
-	  newUltDist = ultra.getDistance(10);
+	  newUltDist = ultra.getDistance(1);
 	  Serial.println("Forward 4");
 	  Serial.println("Inital then new");
 	  Serial.println(initialUltDist);
