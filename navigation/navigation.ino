@@ -3,16 +3,27 @@
 #include <MotorControl.h>
 #include <PinDeclarations.h>
 
+#define TWO_FIVE_m 8964 //2.5m = 8964 encoder ticks
+#define TEN_cm 359 //10cm = 359 ticks
+#define DISTANCE_TRAVELED ticksNow - ticksStart
+
 MotorControl Red;
 IMU Imu_obj;
 
+volatile int encoderTicks;
 volatile boolean bumperFlag;
 int16_t imu_readings1[3];
 
 void setup() {
-  // put your setup code here, to run once:
+  // bumper setup:
   pinMode(2, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(FEELER), stopRed, FALLING);
+
+  //encoder setup
+  encoderTicks = 0; //900 ticks = 25.1cm
+  pinMode(ENCODER_FRONT_LEFT_INC, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_FRONT_LEFT_INC), EncoderEvent, FALLING);
+  
   Serial.begin(9600);
   
   bumperFlag = false;
@@ -23,10 +34,26 @@ void setup() {
 }
 
 void loop() {
+  int ticksStart, ticksNow;
+	
   Imu_obj.getXYZ(imu_readings1);
   while(bumperFlag == false)
   {
-    forward_heading();
+    //start counting encoder ticks when we start moving forward
+	  ticksStart = encoderTicks;
+	  ticksNow = encoderTicks;
+	  while(bumperFlag == false && (DISTANCE_TRAVELED < TWO_FIVE_m))
+	  {		  
+	    forward_heading();
+	    ticksNow = encoderTicks;
+	  }
+	  if(DISTANCE_TRAVELED >= TWO_FIVE_m)
+	  {
+      //take a probe reading
+      //take a GPS reading 
+		  Red.motorOff();
+		  delay(3000);
+	  }
   }
   if(bumperFlag == true)
   {
@@ -37,32 +64,24 @@ void loop() {
 
 void forward_heading() {
 
-    //int timeStart;
-    //int timeNow;
     int16_t imu_readings2[3];
-	int w = 0;
     
     Imu_obj.getXYZ(imu_readings2);
     
     //when off by at least 2 degrees, correct, and then overcorrect by 2 degrees
-	
-	//Each of the adjustment methods have a print in there to stop the I2C from reading
-	//This allows the bumper to add an interrupt to the queue, which could not happen
-	//otherwise due to saturation. (This is a theory by Daniel B.)
     if(imu_readings2[0] + 2 < imu_readings1[0])
     {
-	  Red.motorForwardRight(150);
+	  Red.motorForwardRight(255);
       do{
         Imu_obj.getXYZ(imu_readings2);
-        //Serial.print((int)bumperFlag);
       }while((imu_readings2[0] - 2 < imu_readings1[0]) && !bumperFlag);
     }
     else if(imu_readings2[0] - 2 < imu_readings1[0])
     {
-	  Red.motorForwardLeft(150);
+
+	  Red.motorForwardLeft(255);
       do{
         Imu_obj.getXYZ(imu_readings2);
-        //Serial.print((int)bumperFlag);
       }while((imu_readings2[0] + 2 > imu_readings1[0]) && !bumperFlag);  //&& (timeNow - timeStart < 5000) 
     }
     else
@@ -77,20 +96,24 @@ void turn_around()
   int timeStart;
   int timeNow;
   int16_t imu_readings2[3];
+  int ticksStart, ticksNow;
   
+  //wait for motors to fully stop
   Red.motorOff();
   timeStart = millis();
-  do{
-    timeNow = millis();
-  }while(timeNow - timeStart < 1000);
-  
-  Imu_obj.getXYZ(imu_readings2);
-  
+  do{timeNow = millis();}while(timeNow - timeStart < 800);
+
+  //reverse 10cm and stop
   Red.motorBackward(255);
+  ticksStart = encoderTicks;
+  do {
+    ticksNow = encoderTicks;
+  } while(DISTANCE_TRAVELED < TEN_cm); //backup 10cm
+  //timeStart = millis();
+  //do{timeNow = millis();}while(timeNow - timeStart < 1000);
+  Red.motorOff();
   timeStart = millis();
-  do{
-    timeNow = millis();
-  }while(timeNow - timeStart < 1000);
+  do{timeNow = millis();}while(timeNow - timeStart < 800);
 
   imu_readings1[0] = (imu_readings1[0] + 180)%360;
 
@@ -104,3 +127,6 @@ void stopRed() {
   bumperFlag = true;
 }
 
+void EncoderEvent() {
+  encoderTicks++;
+}
