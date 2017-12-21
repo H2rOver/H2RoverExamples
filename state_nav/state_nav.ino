@@ -52,12 +52,14 @@ static boolean overCorrectFlag;
 static unsigned long time;
 volatile unsigned long encoderTicks;
 static unsigned long ticksStart;
-static states currentState, nextState, previousState;
+static states currentState, nextState, previousState, preProbeState;
 uint16_t initialUltDist;
 uint32_t forwardTicks;
 uint32_t ticksTraveledSide;
 uint32_t backwardTicks;
-
+// when outside 255;
+uint8_t turningStrength = 150; 
+ 
 void setup() {
   // bumper setup
   bumperFlag = false;
@@ -98,7 +100,10 @@ void loop() {
       }
       forward_heading();
       if(bumperFlag == true) nextState = stop1;
-      else if(DISTANCE_TRAVELED >= TWO_FIVE_m) nextState = probe;
+      else if(DISTANCE_TRAVELED >= TWO_FIVE_m) {
+		  preProbeState = forward1;
+		  nextState = probe1;
+	  }
       else nextState = forward1;
       break;
       
@@ -186,7 +191,8 @@ void loop() {
     
     // data comms within...
     case sendData:
-      nextState = forward1;
+	  //ticksStart = encoderTicks;
+      nextState = preProbeState;
       break;
       
     //stop when bumper is hit
@@ -229,7 +235,7 @@ void loop() {
     //turn left 90 after bumper backup
     case left1: 
       if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
-      Red.motorLeft(150);
+      Red.motorLeft(turningStrength);
       Imu_obj.getXYZ(imu_readings2);
 	  Serial.println(imu_readings2[0]);
       if(imu_readings2[0] == imu_readings1[0]) nextState = stop3;
@@ -306,7 +312,7 @@ void loop() {
 	case right1:
 		if(previousState != right1) {
 			imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
-			Red.motorRight(150);
+			Red.motorRight(turningStrength);
 		}
 		Imu_obj.getXYZ(imu_readings2);
 		if(imu_readings2[0] == imu_readings1[0]) nextState = stop5;
@@ -325,11 +331,15 @@ void loop() {
 		
 	//Drive forward while listening to ultrasound to change values drastically twice
 	//This means we encounter the obstacle once, then leave its area of effect
+	//We have not encountered the object again yet
 	case forward3:
       if(previousState != forward3) {
-        ticksStart = encoderTicks;  //start counting encoder ticks
+        ticksStart = encoderTicks - ticksTraveledSide - (forwardTicks - backwardTicks);  //start counting encoder ticks
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
 		initialUltDist = ultra.getDistance(100);
+		if (previousState == sendData) {
+		  ticksStart = encoderTicks;
+		}
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
@@ -340,7 +350,13 @@ void loop() {
 	  Serial.println(newUltDist);
       if (initialUltDist > newUltDist + 20){
 		  nextState = stop7;
-	  } else {
+	  } 
+	  //Stops and takes a reading whenever we travel 2.5m. no matter what!
+	  else if(DISTANCE_TRAVELED >= TWO_FIVE_m) {
+		  preProbeState = forward3;
+		  nextState = probe1;
+	  }
+	  else {
 		  nextState = forward3;
 		  forward_heading();
 	  }
@@ -356,11 +372,15 @@ void loop() {
 		break;
 
 	
+	//We have encountered the pbject again
 	//drive forward while listening to ultrasound
     case forward4:
       if(previousState != forward4) {
         Imu_obj.getXYZ(imu_readings1); //establish imu starting point
 		initialUltDist = ultra.getDistance(100);
+		if (previousState == sendData) {
+		  ticksStart = encoderTicks;
+		}
       }
       /* temporary holding place logic */
 	  //add 5 cm for a small buffer. To be changed later
@@ -372,7 +392,12 @@ void loop() {
       if (initialUltDist + 5 < newUltDist){
 		  forwardTicks += encoderTicks - ticksStart;
 		  nextState = stop6;
-	  } else {
+	  } 
+	  else if(DISTANCE_TRAVELED >= TWO_FIVE_m) {
+		  preProbeState = forward4;
+		  nextState = probe1;
+	  }
+	  else {
 		  nextState = forward4;
 		  forward_heading();
 	  }
