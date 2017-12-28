@@ -2,6 +2,7 @@
 #include <IMU.h>
 #include <MotorControl.h>
 #include <PinDeclarations.h>
+#include <MoistureSensor.h>
 #include <Ultrasound.h>
 
 //distance constants
@@ -49,24 +50,34 @@ enum states {
 //global objects
 MotorControl Red;
 IMU Imu_obj;
-Ultrasound ultra;
+Ultrasound ultrasound;
+MoistureSensor moisture(1);
 
-//global variables
+//global control variables
 static int16_t imu_readings1[3];
 volatile boolean bumperFlag;
 static boolean overCorrectFlag;
+const uint8_t turningStrength = 150; // when outside 255;
+
+//Timing Variables
 //Be sure to redefine time when using millis
 static unsigned long time;
+
+//Distance Variables
 volatile unsigned long encoderTicks;
 static unsigned long ticksStart;
-static states currentState, nextState, previousState, preProbeState;
 uint16_t initialUltDist;
 uint32_t forwardTicks;
 uint32_t ticksTraveledSide;
 uint32_t backwardTicks;
-// when outside 255;
-const uint8_t turningStrength = 150; 
+
+//State Variables
+static states currentState, nextState, previousState, preProbeState;
+
+//Sensor variables
 const uint8_t initalUltSampleCount = 100;
+const uint8_t initalMoistureSampleCount = 50;
+uint16_t moistureLevel = 1023; //This implies it is very dry
  
 void setup() {
   // bumper setup
@@ -80,9 +91,9 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(ENCODER_FRONT_LEFT_INC), EncoderEvent, FALLING);
   
   Serial.begin(9600);
-  ultra.initialize(1);
+  ultrasound.initialize(1);
   delay(1000);
-  Imu_obj.initialize(0); //ID? is zero
+  Imu_obj.initialize(0); //ID is 0
   delay(5000);
 
   //initialize static variables
@@ -161,23 +172,9 @@ void loop() {
     case sampleData:
 		Serial.println("sampleData");
 		if(previousState != sampleData){
-			int testCount = 0;
-			int moistureTest = 0;
-			int moistureSum = 0;
-			int moistureRead = 0;
-			while(testCount < 100)
-			{
-				moistureTest = analogRead(MOISTURE_INPUT);
-				moistureSum = moistureSum + moistureTest;
-				time = millis(); // start stopwatch
-				while (TIME_WAITED <= 10){
-				//Serial.println(TIME_WAITED);
-				}
-				testCount++;
-			}
-			moistureRead = moistureSum / 100;
+			moistureLevel = moisture.getData(initalMoistureSampleCount);
 			Serial.print("Moisture sensor reading: ");
-			Serial.println(moistureRead);
+			Serial.println(moistureLevel);
 			nextState = sampleData;
 		}
 		else nextState = probe2;
@@ -319,11 +316,11 @@ void loop() {
 		if(previousState != forward2a) {
 			ticksStart = encoderTicks;  //start counting encoder ticks
 			Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-			initialUltDist = ultra.getDistance(initalUltSampleCount);
+			initialUltDist = ultrasound.getDistance(initalUltSampleCount);
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultra.getDistance(1);
+		newUltDist = ultrasound.getDistance(1);
 		Serial.println("Forward 3");
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
@@ -423,14 +420,14 @@ void loop() {
 		if(previousState != forward3) {
 			ticksStart = encoderTicks - ticksTraveledSide - (forwardTicks - backwardTicks);  //start counting encoder ticks
 			Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-			initialUltDist = ultra.getDistance(initalUltSampleCount);
+			initialUltDist = ultrasound.getDistance(initalUltSampleCount);
 			if (previousState == sendData) {
 				ticksStart = encoderTicks;
 			}
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultra.getDistance(1);
+		newUltDist = ultrasound.getDistance(1);
 		Serial.println("Forward 3");
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
@@ -474,12 +471,12 @@ void loop() {
 		Serial.println("forward4a");
 		if(previousState != forward4a) {
 			Imu_obj.getXYZ(imu_readings1); //establish imu starting point
-			initialUltDist = ultra.getDistance(initalUltSampleCount);
+			initialUltDist = ultrasound.getDistance(initalUltSampleCount);
 			if (previousState == sendData) ticksStart = encoderTicks;
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultra.getDistance(1);
+		newUltDist = ultrasound.getDistance(1);
 		Serial.println("Forward 4");
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
