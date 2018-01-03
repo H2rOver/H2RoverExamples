@@ -76,6 +76,7 @@ static states currentState, nextState, previousState, preProbeState;
 
 //Sensor variables
 const uint8_t initalUltSampleCount = 100;
+const uint8_t newUltSampleCount = 5;
 const uint8_t initalMoistureSampleCount = 50;
 uint16_t moistureLevel = 1023; //This implies it is very dry
  
@@ -320,8 +321,7 @@ void loop() {
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultrasound.getDistance(1);
-		Serial.println("Forward 3");
+		newUltDist = ultrasound.getDistance(newUltSampleCount);
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
 		Serial.println(newUltDist);
@@ -427,8 +427,7 @@ void loop() {
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultrasound.getDistance(1);
-		Serial.println("Forward 3");
+		newUltDist = ultrasound.getDistance(newUltSampleCount);
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
 		Serial.println(newUltDist);
@@ -476,8 +475,7 @@ void loop() {
 		}
 		/* temporary holding place logic */
 		//add 5 cm for a small buffer. To be changed later
-		newUltDist = ultrasound.getDistance(1);
-		Serial.println("Forward 4");
+		newUltDist = ultrasound.getDistance(newUltSampleCount);
 		Serial.println("Inital then new");
 		Serial.println(initialUltDist);
 		Serial.println(newUltDist);
