@@ -19,7 +19,7 @@ The purpose of these examples are to provide a simple implementation of the H2rO
      - Verify installation by running the command “git” into the command line.
 
   3. The following libraries are installed:
-     - H2Rover
+     - H2Rover https://github.com/H2rOver/H2Rover
 
 ## Cloning the Repository
 
