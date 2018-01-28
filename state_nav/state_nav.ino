@@ -63,7 +63,10 @@ MoistureSensor moisture(1);
 static int16_t imu_readings1[3];
 volatile boolean bumperFlag;
 static boolean overCorrectFlag;
-const uint8_t turningStrength = 150; // when outside 255;
+const uint8_t forwardStrength = 120;
+const uint8_t turningStrength = 120;
+const uint8_t probeMotorStength = 0;
+
 
 //Timing Variables
 //Be sure to redefine time when using millis
@@ -88,6 +91,7 @@ const uint8_t initalUltSampleCount = 100;
 const uint8_t newUltSampleCount = 5;
 const uint8_t initalMoistureSampleCount = 50;
 uint16_t moistureLevel = 1023; //This implies it is very dry
+
  
 void setup() {
   // bumper setup
@@ -103,7 +107,7 @@ void setup() {
   Serial.begin(9600);
   ultrasound.initialize(1);
   delay(1000);
-  Imu_obj.initialize(0); //ID is 0
+  Imu_obj.initialize(0, turningStrength); //ID is 0
   delay(5000);
 
   //initialize static variables
@@ -154,14 +158,14 @@ void loop() {
 		Serial.println("probe1");
 		if(previousState != probe1){
 			Red.motorOff();
-			Red.probeDown(150);
+			Red.probeDown(probeMotorStength);
 			// do I need to make probe reading pin (MOISTURE_INPUT) an output/input or do we already...???
 		}
 		if(bumperFlag == true){        
 		//Serial.println("Testing Soil #1");
 
 		Red.probeOff();
-		Red.probeUp(150);
+		Red.probeUp(probeMotorStength);
 
 		time = millis(); // start stopwatch
 		while (TIME_WAITED <= 100){
@@ -229,7 +233,7 @@ void loop() {
     case sendData:
 		Serial.println("sendData");
 		//ticksStart = encoderTicks;
-		if(sampleCount%24 == 0) || (sampleCount%24 == 1 && sampleCount != 1)) {
+		if(sampleCount%24 == 0 || (sampleCount%24 == 1 && sampleCount != 1)) {
 			nextState = plannedRightA;
 		}
 		else if((sampleCount%12 == 0) || (sampleCount%12 == 1 && sampleCount != 1)){
@@ -595,7 +599,8 @@ void loop() {
 		Serial.println("forward5");
 		if(previousState != forward5){
 			ticksStart = encoderTicks;
-			Red.motorForward(255);
+			//Should this be forward function instead?
+			Red.motorForward(forwardStrength);
 		}
 		Serial.println(ticksTraveledSide);
 		Serial.println(DISTANCE_TRAVELED);
@@ -762,15 +767,15 @@ void forward_heading() {
     
     //when off by at least 1 degrees, correct, and then overcorrect by 2 degrees
     if(imu_readings2[0] + 1 < imu_readings1[0]) {
-	    Red.motorForwardRight(255);
+	    Red.motorForwardRight(forwardStrength);
       overCorrectFlag = true;
     }
     else if(imu_readings2[0] - 1 < imu_readings1[0]) {
-	    Red.motorForwardLeft(255);
+	    Red.motorForwardLeft(forwardStrength);
       overCorrectFlag = true;
     }
     else {
-      Red.motorForward(255);
+      Red.motorForward(forwardStrength);
       overCorrectFlag = false;
     }
 }
