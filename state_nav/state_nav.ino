@@ -17,6 +17,16 @@
 #define DELAY_3s 3000
 #define TIME_WAITED millis() - time
 
+/* IMPORTANT NOTE!:
+     Henceforth, all references to "left" and "right" may actually be misnomers,
+     depending on which way Red is moving and in which position she started in.
+     For the purposes of understanding, we assume Red begins its navigation in a 
+     left to right, or eastward, direction. The nomenclature "Left" then refers 
+     to a left turn if Red is moving eastward. The nomenclature "Right" refers to 
+     a right turn if Red is moving eastward. When Red is moving right to left, or 
+     westward, the terms "right" and "left" will actually mean the opposite. 
+*/
+
 //enumerated state type
 enum states {
   forward1, //drive forward
@@ -47,10 +57,7 @@ enum states {
   stop10,
   plannedLeftA,		//stop
   plannedLeftB,		//90 degree left turn
-  plannedLeftC,		//stop again
-  plannedRightA,	//stop
-  plannedRightB,	//90 degree right turn
-  plannedRightC		//stop again
+  plannedLeftC		//stop again
 };
 
 //global objects
@@ -92,6 +99,13 @@ const uint8_t newUltSampleCount = 5;
 const uint8_t initalMoistureSampleCount = 50;
 uint16_t moistureLevel = 1023; //This implies it is very dry
 
+//Constant to control how many samples red takes before moving to next row
+const uint8_t SAMPLES_PER_ROW = 12;		//Minimum is 2
+
+//Variables to control which direction Red is turning, initialized in setup
+uint16_t leftAngle;
+uint16_t rightAngle;
+
  
 void setup() {
   // bumper setup
@@ -114,6 +128,8 @@ void setup() {
   overCorrectFlag = false;  //for driving straight
   time = 0;
   sampleCount = 0;
+  leftAngle = 270;
+  rightAngle = 90;
   previousState = forward1;
   currentState = forward1;
   nextState = forward1;
@@ -232,11 +248,7 @@ void loop() {
 	*/
     case sendData:
 		Serial.println("sendData");
-		//ticksStart = encoderTicks;
-		if(sampleCount%24 == 0 || (sampleCount%24 == 1 && sampleCount != 1)) {
-			nextState = plannedRightA;
-		}
-		else if((sampleCount%12 == 0) || (sampleCount%12 == 1 && sampleCount != 1)){
+		if((sampleCount%SAMPLES_PER_ROW == 0) || (sampleCount%SAMPLES_PER_ROW == 1 && sampleCount != 1)){
 			nextState = plannedLeftA;
 		}
 		else nextState = preProbeState;
@@ -305,7 +317,8 @@ void loop() {
 	*/
     case left1: 
 		Serial.println("left1");
-		if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		//if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + leftAngle)%360;
 		Red.motorLeft(turningStrength);
 		Imu_obj.getXYZ(imu_readings2);
 		Serial.println(imu_readings2[0]);
@@ -407,7 +420,8 @@ void loop() {
 	case right1:
 		Serial.println("right1");
 		if(previousState != right1) {
-			imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			//imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			imu_readings1[0] = (imu_readings1[0] + rightAngle)%360;
 			Red.motorRight(turningStrength);
 		}
 		Imu_obj.getXYZ(imu_readings2);
@@ -565,7 +579,8 @@ void loop() {
 	case right2:
 		Serial.println("right2");
 		if(previousState != right2) {
-			imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			//imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			imu_readings1[0] = (imu_readings1[0] + rightAngle)%360;
 			Red.motorRight(turningStrength);
 		}
 		Imu_obj.getXYZ(imu_readings2);
@@ -632,7 +647,8 @@ void loop() {
 	*/
     case left2: 
 		Serial.println("left2");
-		if(previousState != left2) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		//if(previousState != left2) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		if(previousState != left2) imu_readings1[0] = (imu_readings1[0] + leftAngle)%360;
 		Red.motorLeft(turningStrength);
 		Imu_obj.getXYZ(imu_readings2);
 		Serial.println(imu_readings2[0]);
@@ -659,7 +675,7 @@ void loop() {
 
 	/*
 	1/3 Planned Left Turn.
-	Stops the rover after reaching the 12th sample in odd row, or 1st sample in even row.
+	Stops the rover after reaching the 12th sample (default=12) in odd row, or 1st sample in even row.
 	Remains in plannedLeftA until DELAY_1s has been reached.
 	Proceeds to plannedLeftB once complete.
 	*/
@@ -681,7 +697,8 @@ void loop() {
 	*/
     case plannedLeftB: 
 		Serial.println("plannedLeftB");
-		if(previousState != plannedLeftB) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		//if(previousState != plannedLeftB) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		if(previousState != plannedLeftB) imu_readings1[0] = (imu_readings1[0] + leftAngle)%360;
 		Red.motorLeft(turningStrength);
 		Imu_obj.getXYZ(imu_readings2);
 		Serial.println(imu_readings2[0]);
@@ -700,57 +717,17 @@ void loop() {
 		if(previousState != plannedLeftC){
 			time = millis(); //start stopwatch
 			Red.motorOff();
+			//redifine "left" and "right" angles when starting a new row
+			if(sampleCount%SAMPLES_PER_ROW == 1){
+				uint8_t tempAngle = leftAngle;
+				leftAngle = rightAngle;
+				rightAngle = tempAngle;
+			}
 		}
 		if(TIME_WAITED >= DELAY_1s) nextState = forward1;
 		else nextState = plannedLeftC;
 		break;
 		
-	/*
-	1/3 Planned Right Turn.
-	Stops the rover after reaching the 12th sample in even row, or 1st sample in odd row.
-	Remains in plannedRightA until DELAY_1s has been reached.
-	Proceeds to plannedRightB once complete.
-	*/
-	case plannedRightA: 
-		Serial.println("plannedRightA");
-		if(previousState != plannedRightA){
-			time = millis(); //start stopwatch
-			Red.motorOff();
-		}
-		if(TIME_WAITED >= DELAY_1s) nextState = plannedRightB;
-		else nextState = plannedRightA;
-		break;
-		
-	/*
-	2/3 Planned Right Turn.
-	Turns the rover to the right 90 degrees using an IMU.
-	Remains in plannedRightB until the correct angle has been reached.
-	Proceeds to plannedRightC once complete.
-	*/
-    case plannedRightB: 
-		Serial.println("plannedRightB");
-		if(previousState != plannedRightB) imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
-		Red.motorRight(turningStrength);
-		Imu_obj.getXYZ(imu_readings2);
-		if(imu_readings2[0] == imu_readings1[0]) nextState = plannedRightC;
-		else nextState = plannedRightB;
-		break;	
-
-	/*
-	3/3 Planned Right Turn.
-	Stops the rover after reaching the end of the right turn (which has occurred after 12th sample in row, or 1st sample in row).
-	Remains in plannedRightC until DELAY_1s has been reached.
-	Proceeds to forward1 once complete.
-	*/
-	case plannedRightC: 
-		Serial.println("plannedRightC");
-		if(previousState != plannedRightC){
-			time = millis(); //start stopwatch
-			Red.motorOff();
-		}
-		if(TIME_WAITED >= DELAY_1s) nextState = forward1;
-		else nextState = plannedRightC;
-		break;
   }
   previousState = currentState;
   currentState = nextState;
