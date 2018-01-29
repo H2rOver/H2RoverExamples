@@ -72,7 +72,7 @@ volatile boolean bumperFlag;
 static boolean overCorrectFlag;
 const uint8_t forwardStrength = 120;
 const uint8_t turningStrength = 120;
-const uint8_t probeMotorStength = 0;
+const uint8_t probeMotorStength = 150;
 
 
 //Timing Variables
@@ -175,21 +175,22 @@ void loop() {
 		if(previousState != probe1){
 			Red.motorOff();
 			Red.probeDown(probeMotorStength);
+			Serial.println("probe down till bumper");
 			// do I need to make probe reading pin (MOISTURE_INPUT) an output/input or do we already...???
 		}
 		if(bumperFlag == true){        
 		//Serial.println("Testing Soil #1");
+		Serial.println("bumper hit");
+			Red.probeOff();
+			Red.probeUp(probeMotorStength);
 
-		Red.probeOff();
-		Red.probeUp(probeMotorStength);
-
-		time = millis(); // start stopwatch
-		while (TIME_WAITED <= 100){
-		  //Serial.println(TIME_WAITED);
-		}
-		bumperFlag = false;
-		Red.probeOff();
-		nextState = sampleData;
+			time = millis(); // start stopwatch
+			while (TIME_WAITED <= 100){
+			  //Serial.println(TIME_WAITED);
+			}
+			bumperFlag = false;
+			Red.probeOff();
+			nextState = sampleData;
 		}
 		else nextState = probe1;
 		break;
@@ -221,11 +222,11 @@ void loop() {
     case probe2:
 		Serial.println("probe2");
 		if(previousState != probe2){
-			Red.probeUp(150);
+			Red.probeUp(probeMotorStength);
 		}
 		if (bumperFlag == true){
 			Red.probeOff();
-			Red.probeDown(150);
+			Red.probeDown(probeMotorStength);
 			time = millis(); // start stopwatch
 			while (TIME_WAITED <= 250){
 			  //Serial.println(TIME_WAITED);
