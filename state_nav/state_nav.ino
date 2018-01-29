@@ -620,8 +620,8 @@ void loop() {
 		Serial.println("forward5");
 		if(previousState != forward5){
 			ticksStart = encoderTicks;
-			//Should this be forward function instead?
-			Red.motorForward(forwardStrength);
+			//Red.motorForward(forwardStrength);
+			forward_heading();
 		}
 		Serial.println(ticksTraveledSide);
 		Serial.println(DISTANCE_TRAVELED);
