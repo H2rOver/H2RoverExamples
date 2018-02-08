@@ -16,6 +16,8 @@
 #define DELAY_1s 1000
 #define DELAY_3s 3000
 #define TIME_WAITED millis() - time
+#define TIMEOUT_WAITED millis() - timeOut
+#define PROBE_TIMEOUT 2000
 
 /* IMPORTANT NOTE!:
      Henceforth, all references to "left" and "right" may actually be misnomers,
@@ -70,14 +72,18 @@ MoistureSensor moisture(1);
 static int16_t imu_readings1[3];
 volatile boolean bumperFlag;
 static boolean overCorrectFlag;
-const uint8_t forwardStrength = 80;
-const uint8_t turningStrength = 80;
-const uint8_t probeMotorStength = 130;
+const uint8_t forwardStrength = 130;
+const uint8_t turningStrength = 130;  //grass or dirt
+//const uint8_t turningStrength = 100;  //tile surface
+//const uint8_t probeMotorStength = 130;
+const uint8_t probeMotorStength = 0;
 
 
 //Timing Variables
 //Be sure to redefine time when using millis
 static unsigned long time;
+static unsigned long timeOut;
+static boolean timeOutFlag;
 
 //Distance Variables
 volatile unsigned long encoderTicks;
@@ -126,6 +132,7 @@ void setup() {
 
   //initialize static variables
   overCorrectFlag = false;  //for driving straight
+  timeOutFlag = false;
   time = 0;
   sampleCount = 0;
   leftAngle = 270;
@@ -177,6 +184,7 @@ void loop() {
 			Red.probeDown(probeMotorStength);
 			Serial.println("probe down till bumper");
 			// do I need to make probe reading pin (MOISTURE_INPUT) an output/input or do we already...???
+			timeOut = millis();
 		}
 		if(bumperFlag == true){        
 		//Serial.println("Testing Soil #1");
@@ -191,6 +199,11 @@ void loop() {
 			bumperFlag = false;
 			Red.probeOff();
 			nextState = sampleData;
+		}
+		//if it has been in this state for more than 3 seconds
+		else if(TIMEOUT_WAITED >= PROBE_TIMEOUT) {
+			nextState = sampleData;
+			timeOutFlag = true;
 		}
 		else nextState = probe1;
 		break;
@@ -223,6 +236,7 @@ void loop() {
 		Serial.println("probe2");
 		if(previousState != probe2){
 			Red.probeUp(probeMotorStength);
+			timeOut = millis();
 		}
 		if (bumperFlag == true){
 			Red.probeOff();
@@ -234,6 +248,11 @@ void loop() {
 			bumperFlag = false;
 			Red.probeOff();
 			nextState = sendData;
+		}		
+		//if it has been in this state for more than 3 seconds
+		else if(TIMEOUT_WAITED >= PROBE_TIMEOUT) {
+			nextState = sendData;
+			timeOutFlag = true;
 		}
 		else nextState = probe2;
 		break;
