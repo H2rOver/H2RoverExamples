@@ -70,9 +70,9 @@ MoistureSensor moisture(1);
 static int16_t imu_readings1[3];
 volatile boolean bumperFlag;
 static boolean overCorrectFlag;
-const uint8_t forwardStrength = 120;
-const uint8_t turningStrength = 120;
-const uint8_t probeMotorStength = 150;
+const uint8_t forwardStrength = 80;
+const uint8_t turningStrength = 80;
+const uint8_t probeMotorStength = 130;
 
 
 //Timing Variables
@@ -228,7 +228,7 @@ void loop() {
 			Red.probeOff();
 			Red.probeDown(probeMotorStength);
 			time = millis(); // start stopwatch
-			while (TIME_WAITED <= 250){
+			while (TIME_WAITED <= 80){
 			  //Serial.println(TIME_WAITED);
 			}
 			bumperFlag = false;
@@ -287,7 +287,7 @@ void loop() {
 			ticksStart = encoderTicks;
 			Serial.print("encoder ticks2: "); Serial.println(encoderTicks);
 		}
-		Red.motorBackward(255);
+		Red.motorBackward(forwardStrength);
 		if(TIME_WAITED >= DELAY_HALFs) {
 			backwardTicks = encoderTicks - ticksStart;
 			Serial.println(backwardTicks);
