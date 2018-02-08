@@ -337,12 +337,14 @@ void loop() {
 	*/
     case left1: 
 		Serial.println("left1");
-		//if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		if(previousState != left1) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		Red.motorLeft(turningStrength);
+		/*
 		if(previousState != left1) {
 			imu_readings1[0] = (imu_readings1[0] + leftAngle)%360;
 			if(leftAngle == 270) Red.motorLeft(turningStrength);
 			else Red.motorRight(turningStrength);
-		}
+		}*/
 		Imu_obj.getXYZ(imu_readings2);
 		Serial.println(imu_readings2[0]);
 		if(imu_readings2[0] == imu_readings1[0]) nextState = stop3;
@@ -443,10 +445,13 @@ void loop() {
 	case right1:
 		Serial.println("right1");
 		if(previousState != right1) {
-			//imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			Red.motorRight(turningStrength);
+			/*
 			imu_readings1[0] = (imu_readings1[0] + rightAngle)%360;
 			if(rightAngle == 90) Red.motorRight(turningStrength);
 			else Red.motorLeft(turningStrength);
+			*/
 		}
 		Imu_obj.getXYZ(imu_readings2);
 		if(imu_readings2[0] == imu_readings1[0]) nextState = stop5;
@@ -603,10 +608,13 @@ void loop() {
 	case right2:
 		Serial.println("right2");
 		if(previousState != right2) {
-			//imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			imu_readings1[0] = (imu_readings1[0] + 90)%360;  //destination = current + 90 degrees
+			Red.motorRight(turningStrength);
+			/*
 			imu_readings1[0] = (imu_readings1[0] + rightAngle)%360;
 			if(rightAngle == 90) Red.motorRight(turningStrength);
 			else Red.motorLeft(turningStrength);
+			*/
 		}
 		Imu_obj.getXYZ(imu_readings2);
 		if(imu_readings2[0] == imu_readings1[0]) nextState = stop8;
@@ -672,12 +680,15 @@ void loop() {
 	*/
     case left2: 
 		Serial.println("left2");
-		//if(previousState != left2) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		if(previousState != left2) imu_readings1[0] = (imu_readings1[0] + 270)%360;  //destination = current - 90 degrees
+		Red.motorLeft(turningStrength);
+		/*
 		if(previousState != left2) {
 			imu_readings1[0] = (imu_readings1[0] + leftAngle)%360;
 			if(leftAngle == 270) Red.motorLeft(turningStrength);
 			else Red.motorRight(turningStrength);
 		}
+		*/
 		Imu_obj.getXYZ(imu_readings2);
 		Serial.println(imu_readings2[0]);
 		if(imu_readings2[0] == imu_readings1[0]) nextState = stop10;
