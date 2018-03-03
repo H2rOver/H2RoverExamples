@@ -10,11 +10,12 @@
 #include <PinDeclarations.h>
 
 H2RoverXbee xbee(1);
+H2RoverXbee xbee1(0);
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  
+
 }
 
 void loop() {
@@ -23,5 +24,6 @@ xbee.setMaximumPacketSize(10);
 //First value holds the length of the payload DO NOT INCLUDE THE  // LENGTH OF THE PAYLOAD. Notice ten characters <= 10
   uint8_t payload[] = {6, 'A' , 'B', 'C', '1', '2', '3'};
   xbee.sendPacket(payload);
+  xbee1.sendPacket(payload);
   delay(1000);
 }
