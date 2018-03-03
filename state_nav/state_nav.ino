@@ -1,8 +1,9 @@
+#include <GPS.h>
 #include <H2RoverXbee.h>
 #include <IMU.h>
+#include <MoistureSensor.h>
 #include <MotorControl.h>
 #include <PinDeclarations.h>
-#include <MoistureSensor.h>
 #include <Ultrasound.h>
 
 //distance constants
@@ -17,7 +18,7 @@
 #define DELAY_3s 3000
 #define TIME_WAITED millis() - time
 #define TIMEOUT_WAITED millis() - timeOut
-#define PROBE_TIMEOUT 2000
+#define PROBE_TIMEOUT 100000
 
 /* IMPORTANT NOTE!:
      Henceforth, all references to "left" and "right" may actually be misnomers,
@@ -66,7 +67,16 @@ enum states {
 MotorControl Red;
 IMU Imu_obj;
 Ultrasound ultrasound;
+//We send to the coordinator from the end device
+//We can read fromt he xbee without distinction of mac address
+//MAC address ends with 07. transmits to MAC address 02.
+H2RoverXbee xbee_end_to_coordinator(1);
+GPS gps;
 MoistureSensor moisture(1);
+
+//Xbee packet Length
+uint8_t packet_length = 10;
+String array[8];
 
 //global control variables
 static int16_t imu_readings1[3];
@@ -74,9 +84,7 @@ volatile boolean bumperFlag;
 static boolean overCorrectFlag;
 const uint8_t forwardStrength = 130;
 const uint8_t turningStrength = 130;  //grass or dirt
-//const uint8_t turningStrength = 100;  //tile surface
-//const uint8_t probeMotorStength = 130;
-const uint8_t probeMotorStength = 0;
+const uint8_t probeMotorStength = 130;
 
 
 //Timing Variables
@@ -94,7 +102,7 @@ uint32_t ticksTraveledSide;
 uint32_t backwardTicks;
 
 //Sampling Variables
-static unsigned int sampleCount;
+static uint8_t sampleCount;
 
 //State Variables
 static states currentState, nextState, previousState, preProbeState;
@@ -112,8 +120,36 @@ const uint8_t SAMPLES_PER_ROW = 12;		//Minimum is 2
 uint16_t leftAngle;
 uint16_t rightAngle;
 
+//GPS variables
+// String array[8];
+// String timeString;
+// String dateString;
+// String latString;
+// String longString;
+// char timeChar[9]; // HH:MM:SS = 8 characters + terminating = 9
+// char dateChar[11]; // MM/DD/YYYY = 10 characters + terminating = 11
+// char latChar[11]; // (-)###.#####(#) = 10 characters [1 () optional] + terminating = 11
+// char longChar[11]; // (-)###.#####(#) = 10 characters [1 () optional] + terminating = 11
+// uint8_t timeData[9];
+// uint8_t dateData[11];
+// uint8_t latData[11];
+// uint8_t longData[11];
+
+////MOISTURE Sdata variables
+// uint8_t moisture_multiplier;
+// uint8_t moisture_remainder;
+// uint8_t moisture_data[4];
+
  
 void setup() {
+	
+  //GPS setup
+  gps.initialize();
+  delay(5000);
+  
+  //Xbee send/recieve setup
+  xbee_end_to_coordinator.setMaximumPacketSize(packet_length);
+  
   // bumper setup
   bumperFlag = false;
   pinMode(FEELER, INPUT_PULLUP);
@@ -141,6 +177,7 @@ void setup() {
   currentState = forward1;
   nextState = forward1;
   Imu_obj.getXYZ(imu_readings1); //establish imu starting point
+  
 }
 
 void loop() {
@@ -178,8 +215,26 @@ void loop() {
 	Proceeds to sampleData once triggered.
 	*/
     case probe1: 
+		
 		Serial.println("probe1");
-		if(previousState != probe1){
+		Red.motorOff();
+		while(!bumperFlag){
+			Red.probeDown(probeMotorStength);
+		}
+
+		bumperFlag = false;
+		Red.probeOff();
+		Red.probeUp(probeMotorStength);
+
+		time = millis(); // start stopwatch
+		while (TIME_WAITED <= 400){
+		//Serial.println(TIME_WAITED);
+		}
+
+		bumperFlag = false;
+		Red.probeOff();
+		nextState = sampleData;
+/* 		if(previousState != probe1){
 			Red.motorOff();
 			Red.probeDown(probeMotorStength);
 			Serial.println("probe down till bumper");
@@ -193,7 +248,7 @@ void loop() {
 			Red.probeUp(probeMotorStength);
 
 			time = millis(); // start stopwatch
-			while (TIME_WAITED <= 100){
+			while (TIME_WAITED <= 400){
 			  //Serial.println(TIME_WAITED);
 			}
 			bumperFlag = false;
@@ -205,7 +260,7 @@ void loop() {
 			nextState = sampleData;
 			timeOutFlag = true;
 		}
-		else nextState = probe1;
+		else nextState = probe1; */
 		break;
 
 	/*
@@ -242,7 +297,7 @@ void loop() {
 			Red.probeOff();
 			Red.probeDown(probeMotorStength);
 			time = millis(); // start stopwatch
-			while (TIME_WAITED <= 80){
+			while (TIME_WAITED <= 400){
 			  //Serial.println(TIME_WAITED);
 			}
 			bumperFlag = false;
@@ -268,6 +323,7 @@ void loop() {
 	*/
     case sendData:
 		Serial.println("sendData");
+		send_data();
 		if((sampleCount%SAMPLES_PER_ROW == 0) || (sampleCount%SAMPLES_PER_ROW == 1 && sampleCount != 1)){
 			nextState = plannedLeftA;
 		}
@@ -797,6 +853,63 @@ void forward_heading() {
       Red.motorForward(forwardStrength);
       overCorrectFlag = false;
     }
+}
+
+void send_data(){
+	      // create character arrays from GPS library array of strings
+	char timeChar[9]; // HH:MM:SS = 8 characters + terminating = 9
+	char dateChar[11]; // MM/DD/YYYY = 10 characters + terminating = 11
+	char latChar[11]; // (-)###.#####(#) = 10 characters [1 () optional] + terminating = 11
+	char longChar[11]; // (-)###.#####(#) = 10 characters [1 () optional] + terminating = 11
+	
+	gps.getData(array);
+
+	String timeString = array[0]+":"+array[1]+":"+array[2];
+	timeString.toCharArray(timeChar,9);
+	String dateString = array[3]+"/"+array[4]+"/20"+array[5];
+	dateString.toCharArray(dateChar,11);
+	String latString = array[6];
+	latString.toCharArray(latChar,11);
+	String longString = array[7];
+	longString.toCharArray(longChar,11);
+	for(int i = 0; i < 8; i++){
+		Serial.println(array[i]);
+	}
+	Serial.println(timeString);
+	Serial.println(dateString);
+	Serial.println(latString);
+	Serial.println(longString);
+	
+
+	// send XBee payloads: Time -> Date -> Latitude -> Longitude
+	uint8_t timeData[] = {strlen(timeChar),timeChar[0],timeChar[1],timeChar[2],timeChar[3],
+		timeChar[4],timeChar[5],timeChar[6],timeChar[7]};
+
+	xbee_end_to_coordinator.sendPacket(timeData);
+
+
+	uint8_t dateData[] = {strlen(dateChar),dateChar[0],dateChar[1],dateChar[2],dateChar[3],
+		dateChar[4],dateChar[5],dateChar[6],dateChar[7],dateChar[8],dateChar[9]};
+
+	xbee_end_to_coordinator.sendPacket(dateData);
+
+	
+	uint8_t latData[] = {strlen(latChar),latChar[0],latChar[1],latChar[2],latChar[3],
+		latChar[4],latChar[5],latChar[6],latChar[7],latChar[8],latChar[9]};
+
+	xbee_end_to_coordinator.sendPacket(latData);
+
+	uint8_t longData[] = {strlen(longChar),longChar[0],longChar[1],longChar[2],longChar[3],
+		longChar[4],longChar[5],longChar[6],longChar[7],longChar[8],longChar[9]};
+
+	xbee_end_to_coordinator.sendPacket(longData);
+
+
+	char moisture_multiplier = moistureLevel / 255;
+	char moisture_remainder = moistureLevel % 255;
+	uint8_t moisture_data[] = {3, moisture_multiplier, moisture_remainder, sampleCount};
+
+	xbee_end_to_coordinator.sendPacket(moisture_data);
 }
 
 void stopRed() {
