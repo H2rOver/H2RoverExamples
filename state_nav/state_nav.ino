@@ -145,7 +145,6 @@ void setup() {
 	
   //GPS setup
   gps.initialize();
-  delay(5000);
   
   //Xbee send/recieve setup
   xbee_end_to_coordinator.setMaximumPacketSize(packet_length);
@@ -162,9 +161,7 @@ void setup() {
   
   Serial.begin(9600);
   ultrasound.initialize(1);
-  delay(1000);
   Imu_obj.initialize(0, turningStrength); //ID is 0
-  delay(5000);
 
   //initialize static variables
   overCorrectFlag = false;  //for driving straight
