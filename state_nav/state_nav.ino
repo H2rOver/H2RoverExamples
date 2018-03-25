@@ -7,8 +7,8 @@
 #include <Ultrasound.h>
 
 //distance constants
-#define TWO_FIVE_m 8964 //2.5m = 8964 encoder ticks // MIDOLO???
-#define TEN_cm 359 //10cm = 359 ticks // MIDOLO???
+//#define TWO_FIVE_m 8964 //2.5m = 8964 encoder ticks ~ value for old wheels
+#define TWO_FIVE_m 6631  // new wheels
 #define DISTANCE_TRAVELED encoderTicks - ticksStart
 
 //time constants
